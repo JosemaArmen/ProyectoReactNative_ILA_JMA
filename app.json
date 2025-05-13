@@ -9,9 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.pruebaLoginGoogle.app",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.pruebaLoginGoogle.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -37,6 +39,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1427f66b-005c-4c1d-910b-5cc563fc857e"
+      }
     }
   }
 }
