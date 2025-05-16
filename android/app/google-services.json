@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "861130410537",
+    "firebase_url": "https://proyectoreactnative-ila-jma-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "proyectoreactnative-ila-jma",
+    "storage_bucket": "proyectoreactnative-ila-jma.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:861130410537:android:94758c997f339a07ccea38",
+        "android_client_info": {
+          "package_name": "prueba.login"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "861130410537-kn1or1ir069051gp812s110bg63nq9e1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoxEKkK10268bF6Hz2B92Aq6PNizy_cw8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "861130410537-kn1or1ir069051gp812s110bg63nq9e1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
