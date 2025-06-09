@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Image, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { getDatabase, ref, onValue } from 'firebase/database';
 import app from './firebaseConfig'; // Asegúrate de tener tu configuración de Firebase aquí
 
-export default function ListaViajes() {
+export default function ListaViajes({ navigation }) {
   const [viajes, setViajes] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,16 +36,20 @@ export default function ListaViajes() {
       data={viajes}
       keyExtractor={item => item.id}
       renderItem={({ item }) => (
-        <View style={styles.itemContainer}>
-          {item.foto ? (
-            <Image source={{ uri: item.foto }} style={styles.image} resizeMode="cover" />
-          ) : (
-            <View style={[styles.image, { justifyContent: 'center', alignItems: 'center' }]}>
-              <Text>Sin foto</Text>
-            </View>
-          )}
-          <Text style={styles.ubicacion}>{item.ubicacion}</Text>
-        </View>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Viaje', { viajeId: item.id })}
+        >
+          <View style={styles.itemContainer}>
+            {item.foto ? (
+              <Image source={{ uri: item.foto }} style={styles.image} resizeMode="cover" />
+            ) : (
+              <View style={[styles.image, { justifyContent: 'center', alignItems: 'center' }]}>
+                <Text>Sin foto</Text>
+              </View>
+            )}
+            <Text style={styles.ubicacion}>{item.ubicacion}</Text>
+          </View>
+        </TouchableOpacity>
       )}
       contentContainerStyle={{ padding: 16 }}
     />

@@ -13,7 +13,7 @@ function TripListScreen({ navigation }) {
         <Text style={styles.accountButtonText}>Mi Cuenta</Text>
       </TouchableOpacity>
       <Text style={styles.bigTitle}>Lista de Viajes</Text>
-      <ListaViajes />
+      <ListaViajes navigation={navigation} />
     </View>
   );
 }
