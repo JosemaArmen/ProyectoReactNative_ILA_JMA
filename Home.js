@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ListaViajes from './ListaViajes';
 
@@ -10,9 +10,11 @@ function TripListScreen({ navigation }) {
         style={styles.accountButton}
         onPress={() => navigation.navigate('Account')}
       >
-        <Text style={styles.accountButtonText}>Mi Cuenta</Text>
+        <Image
+          source={{ uri: 'https://cdn-icons-png.flaticon.com/512/747/747376.png' }} // Icono de usuario
+          style={styles.accountIcon}
+        />
       </TouchableOpacity>
-      <Text style={styles.bigTitle}>Lista de Viajes</Text>
       <ListaViajes navigation={navigation} />
     </View>
   );
@@ -21,7 +23,7 @@ function TripListScreen({ navigation }) {
 function AddTripScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.bigTitle}>Añadir Viaje</Text>
+      <Text style={styles.bigTitle}>Añadir viaje</Text>
     </View>
   );
 }
@@ -39,14 +41,17 @@ const Tab = createBottomTabNavigator();
 export default function Home({ navigation }) {
   return (
     <Tab.Navigator
-      initialRouteName="Lista de Viajes"
+      initialRouteName="Lista de viajes"
       screenOptions={{
         headerShown: false,
-        tabBarLabelStyle: { fontSize: 22, fontWeight: 'bold' },
+        tabBarLabelStyle: { fontSize: 20, fontWeight: 'bold' },
+        tabBarStyle: {
+          height: 110, // Solo height, más alto para más margen inferior
+        },
       }}
     >
-      <Tab.Screen name="Lista de Viajes" component={TripListScreen} />
-      <Tab.Screen name="Añadir Viaje" component={AddTripScreen} />
+      <Tab.Screen name="Lista de viajes" component={TripListScreen} />
+      <Tab.Screen name="Añadir viaje" component={AddTripScreen} />
     </Tab.Navigator>
   );
 }
@@ -67,10 +72,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     zIndex: 1,
   },
-  accountButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+  accountIcon: {
+    width: 36,  // antes 28
+    height: 36, // antes 28
+    tintColor: '#fff',
   },
   bigTitle: {
     marginTop: 60,

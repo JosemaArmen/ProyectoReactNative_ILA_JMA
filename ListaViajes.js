@@ -51,6 +51,9 @@ export default function ListaViajes({ navigation }) {
           </View>
         </TouchableOpacity>
       )}
+      ListHeaderComponent={
+        <Text style={styles.tituloLista}>Lista de viajes</Text>
+      }
       contentContainerStyle={{ padding: 16 }}
     />
   );
@@ -72,5 +75,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  tituloLista: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    fontFamily: 'serif',
+    color: '#2a3d66',
+    marginTop: 65,
+    marginBottom: 24,
+    textAlign: 'center',
+    textShadowColor: '#b0c4de',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+    letterSpacing: 1,
   },
 });
