@@ -1,18 +1,53 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Modal } from 'react-native';
 import { ref, get } from 'firebase/database';
 import { db } from './firebaseConfig';
+import axios from 'axios';
+import MapView, { Marker } from 'react-native-maps'; // <--- Añadido
+
+// Reemplaza con tu propia API key de OpenCage
+const OPENCAGE_API_KEY = '767486d0c0f04b80a7de4af9fa92c9bd';
+
+async function getCountryDataFromLocation(ubicacion) {
+  if (!ubicacion) return { countryCode: null, coords: null };
+
+  try {
+    const response = await axios.get(
+      `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(ubicacion)}&key=${OPENCAGE_API_KEY}&language=es`
+    );
+
+    if (response.data && response.data.results.length > 0) {
+      const countryCode = response.data.results[0].components['country_code'];
+      const coords = response.data.results[0].geometry;
+      return { countryCode, coords };
+    } else {
+      return { countryCode: null, coords: null };
+    }
+  } catch (error) {
+    console.error('Error al obtener el país:', error);
+    return { countryCode: null, coords: null };
+  }
+}
 
 export default function Viaje({ route, navigation }) {
   const { viajeId } = route.params;
   const [viaje, setViaje] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [countryCode, setCountryCode] = useState(null);
+  const [coords, setCoords] = useState(null);
+  const [mapVisible, setMapVisible] = useState(false); // Nuevo estado
 
   useEffect(() => {
     const fetchViaje = async () => {
       const viajeRef = ref(db, `viajes/${viajeId}`);
       const snapshot = await get(viajeRef);
-      setViaje(snapshot.val());
+      const viajeData = snapshot.val();
+      setViaje(viajeData);
+      if (viajeData && viajeData.ubicacion) {
+        const { countryCode, coords } = await getCountryDataFromLocation(viajeData.ubicacion);
+        setCountryCode(countryCode);
+        setCoords(coords);
+      }
       setLoading(false);
     };
     fetchViaje();
@@ -27,15 +62,61 @@ export default function Viaje({ route, navigation }) {
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <View style={styles.backArrowCircle}>
           <Image
-            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/271/271220.png' }} // Icono de flecha más bonito
+            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/271/271220.png' }}
             style={styles.backArrowImg}
           />
         </View>
       </TouchableOpacity>
       <View style={styles.ubicacionContainer}>
+        {countryCode && (
+          <Image
+            source={{ uri: `https://flagcdn.com/32x24/${countryCode}.png` }}
+            style={{ width: 32, height: 24, marginRight: 8, borderRadius: 4 }}
+          />
+        )}
         <Text style={styles.title}>{viaje.ubicacion}</Text>
-        {/* Bandera eliminada */}
+        {countryCode && (
+          <Image
+            source={{ uri: `https://flagcdn.com/32x24/${countryCode}.png` }}
+            style={{ width: 32, height: 24, marginLeft: 0, borderRadius: 4 }}
+          />
+        )}
       </View>
+      {coords && (
+        <TouchableOpacity onPress={() => setMapVisible(true)} activeOpacity={0.8}>
+          <MapView
+            style={styles.map}
+            initialRegion={{
+              latitude: coords.lat,
+              longitude: coords.lng,
+              latitudeDelta: 0.1,
+              longitudeDelta: 0.1,
+            }}
+            pointerEvents="none" // Para que el mapa pequeño no sea interactivo
+          >
+            <Marker coordinate={{ latitude: coords.lat, longitude: coords.lng }} />
+          </MapView>
+        </TouchableOpacity>
+      )}
+      {/* Modal para el mapa grande */}
+      <Modal visible={mapVisible} animationType="slide">
+        <View style={styles.modalContainer}>
+          <MapView
+            style={styles.fullMap}
+            initialRegion={{
+              latitude: coords?.lat || 0,
+              longitude: coords?.lng || 0,
+              latitudeDelta: 0.05,
+              longitudeDelta: 0.05,
+            }}
+          >
+            <Marker coordinate={{ latitude: coords?.lat || 0, longitude: coords?.lng || 0 }} />
+          </MapView>
+          <TouchableOpacity style={styles.closeButton} onPress={() => setMapVisible(false)}>
+            <Text style={styles.closeButtonText}>Cerrar mapa</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
       <View style={styles.fechaArtContainer}>
         <Image
           source={{ uri: 'https://cdn-icons-png.flaticon.com/512/747/747310.png' }}
@@ -88,17 +169,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 60,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   title: {
-    fontSize: 38,
+    fontSize: 32,
     fontWeight: 'bold',
     fontFamily: 'serif',
     color: '#2a3d66',
-    marginRight: 12,
+    marginRight: 8,
     textShadowColor: '#b0c4de',
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 4,
+  },
+  map: {
+    width: 320,
+    height: 180,
+    borderRadius: 12,
+    marginBottom: 18,
   },
   fechaArtContainer: {
     flexDirection: 'row',
@@ -159,4 +246,29 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   image: { width: 300, height: 200, borderRadius: 12, marginBottom: 10 },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullMap: {
+    width: '100%',
+    height: '85%',
+  },
+  closeButton: {
+    position: 'absolute',
+    bottom: 40,
+    alignSelf: 'center',
+    backgroundColor: '#2a3d66',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    elevation: 4,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });
