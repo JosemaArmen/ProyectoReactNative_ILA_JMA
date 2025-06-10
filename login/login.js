@@ -76,37 +76,45 @@ function Login(props) {
     }
 
     return (
-        <View style={styles.form}>
-            <Text style={styles.title}>{titulo}</Text>
-            <View style={styles.centeredContent}>
-                <TextInput
-                    style={styles.input}
-                    autoCapitalize="none"
-                    placeholder="Email"
-                    value={email}
-                    onChangeText={setEmail}
-                />
-                <TextInput
-                    style={styles.input}
-                    autoCapitalize="none"
-                    placeholder="Password"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={true}
-                />
-                {inputPass2}
-                <View style={styles.button}>
-                    <Button style={styles.button} onPress={handleSubmit} title={titulo} />
+        <View style={styles.container}>
+            <View style={styles.form}>
+                <Text style={styles.title}>{titulo}</Text>
+                <View style={styles.centeredContent}>
+                    <TextInput
+                        style={styles.input}
+                        autoCapitalize="none"
+                        placeholder="Email"
+                        value={email}
+                        onChangeText={setEmail}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        autoCapitalize="none"
+                        placeholder="Password"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry={true}
+                    />
+                    {inputPass2}
+                    <View style={styles.button}>
+                        <Button style={styles.button} onPress={handleSubmit} title={titulo} />
+                    </View>
                 </View>
-            </View>
-            <View style={styles.buttonCambiar}>
-                <Button style={styles.button} onPress={handleChange} title={textoCambiar} />
+                <View style={styles.buttonCambiar}>
+                    <Button style={styles.button} onPress={handleChange} title={textoCambiar} />
+                </View>
             </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     form: {
         width: '85%',
         height: '75%',

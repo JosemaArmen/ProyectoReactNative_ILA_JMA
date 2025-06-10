@@ -1,8 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import React from 'react';
-import Login from './login/login';
-import UsuarioLogueado from './login/usuarioLogueado';
+import Login from './login/Login';
+import Account from './login/Account'
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from './Home';
@@ -21,6 +21,7 @@ export default function App() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Home" component={Home} />
           <Stack.Screen name="Viaje" component={Viaje} />
+          <Stack.Screen name="Account" component={Account} />
         </Stack.Navigator>
       </NavigationContainer>;
   } else {
@@ -28,17 +29,8 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
-      { contenido}
-    </View>
+    <>
+      {contenido}
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
