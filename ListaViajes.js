@@ -15,8 +15,16 @@ export default function ListaViajes({ navigation }) {
       if (data) {
         const lista = Object.entries(data).map(([id, item]) => ({
           id,
+          nombre: item.nombre || '', // <-- Añadido
           ubicacion: item.ubicacion || '',
-          foto: item.fotos && Array.isArray(item.fotos) && item.fotos.length > 0 ? item.fotos[0] : null,
+          foto:
+            item.fotos &&
+            Array.isArray(item.fotos) &&
+            item.fotos.length > 0 &&
+            item.fotos[0] &&
+            item.fotos[0].url
+              ? item.fotos[0].url
+              : null,
         }));
         setViajes(lista);
       } else {
@@ -47,7 +55,7 @@ export default function ListaViajes({ navigation }) {
                 <Text>Sin foto</Text>
               </View>
             )}
-            <Text style={styles.ubicacion}>{item.ubicacion}</Text>
+            <Text style={styles.nombreViaje}>{item.nombre}</Text>
           </View>
         </TouchableOpacity>
       )}
@@ -70,11 +78,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#eee',
   },
-  ubicacion: {
+  nombreViaje: {
     marginTop: 10,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
+    color: '#3b5998',
+    textShadowColor: '#b0c4de',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+    letterSpacing: 1,
   },
   tituloLista: {
     fontSize: 32,
