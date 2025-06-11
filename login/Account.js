@@ -1,7 +1,14 @@
 import { Button, View } from 'react-native';
 import { auth } from '../firebaseConfig'
+import { connect } from 'react-redux';
+import { addUser, setLoggedIn } from '../redux/ActionCreators';
 
-function Account({ navigation, setUser }) {
+const mapDispatchToProps = dispatch => ({
+  addUser: (user) => dispatch(addUser(user)),
+  setLoggedIn: (loggedIn) => dispatch(setLoggedIn(loggedIn))
+});
+
+function Account({ navigation, addUser, setLoggedIn }) {
 
     const handleLogout = () => {
         auth.signOut()
@@ -11,7 +18,9 @@ function Account({ navigation, setUser }) {
             .catch((error) => {
                 console.error("Error signing out:", error);
             });
-        setUser(null); // Limpiar el estado del usuario
+        addUser(null);
+        setLoggedIn(false);
+        // cerrarSesion();
         // navigation.navigate('Home'); // Redirigir a la pantalla de inicio de sesión
     }
 
@@ -44,4 +53,4 @@ const styles = {
     },
 };
 
-export default Account;
+export default connect(null, mapDispatchToProps)(Account);

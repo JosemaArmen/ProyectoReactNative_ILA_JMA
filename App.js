@@ -7,30 +7,21 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from './Home';
 import Viaje from './Viaje';
+import { Provider } from 'react-redux';
+import { ConfigureStore } from './redux/configureStore';
 
-const Stack = createNativeStackNavigator();
+const store = ConfigureStore();
+
+// const Stack = createNativeStackNavigator();
 
 export default function App() {
 
-  const [user, setUser] = React.useState(null);
-
-  let contenido;
-  if (user) {
-    contenido =
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Home" component={Home} />
-          <Stack.Screen name="Viaje" component={Viaje} />
-          <Stack.Screen name="Account" component={Account} />
-        </Stack.Navigator>
-      </NavigationContainer>;
-  } else {
-    contenido = <Login setUser={setUser} />;
-  }
+  // const [user, setUser] = React.useState(null);
 
   return (
-    <>
-      {contenido}
-    </>
+    <Provider store={store}>
+      <Home />
+      <StatusBar style="auto" />
+    </Provider>
   );
 }

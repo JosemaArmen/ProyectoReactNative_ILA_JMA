@@ -2,8 +2,15 @@ import React from "react";
 import { auth } from "../firebaseConfig";
 import { Button, Text, TextInput, View, StyleSheet } from "react-native";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { connect } from "react-redux";
+import { addUser, setLoggedIn } from "../redux/ActionCreators";
 
-function Login(props) {
+const mapDispatchToProps = dispatch => ({
+    addUser: (user) => dispatch(addUser(user)),
+    setLoggedIn: (loggedIn) => dispatch(setLoggedIn(loggedIn))
+});
+
+function Login({ addUser, setLoggedIn }) {
     const [mode, setMode] = React.useState("login"); // "login" o "register"
     const [email, setEmail] = React.useState("");
     const [password, setPassword] = React.useState("");
@@ -15,8 +22,9 @@ function Login(props) {
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
-                    console.log("User signed in:", user);
-                    props.setUser(user);
+                    console.log("User signed in successfully ", user.uid, " :: ", user.stsTokenManager.expirationTime);
+                    addUser({uid: user.uid, expirationTime: user.stsTokenManager.expirationTime});
+                    setLoggedIn(true);
                 })
                 .catch((error) => {
                     const errorCode = error.code;
@@ -32,8 +40,9 @@ function Login(props) {
             createUserWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
-                    console.log("User registered:", user);
-                    props.setUser(user);
+                    console.log("User registered successfully", user.uid, " :: ", user.stsTokenManager.expirationTime);
+                    addUser({uid: user.uid, expirationTime: user.stsTokenManager.expirationTime});
+                    setLoggedIn(true);
                 })
                 .catch((error) => {
                     const errorCode = error.code;
@@ -171,4 +180,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default Login;
+export default connect(null, mapDispatchToProps)(Login);
