@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Modal, Platform } from 'react-native';
 import { ref, get } from 'firebase/database';
 import { db } from './firebaseConfig';
 import axios from 'axios';
-import MapView, { Marker } from 'react-native-maps'; // <--- Añadido
+
+let MapView, Marker;
+if (Platform.OS !== 'web') {
+  MapView = require('react-native-maps').default;
+  Marker = require('react-native-maps').Marker;
+}
 
 // Reemplaza con tu propia API key de OpenCage
 const OPENCAGE_API_KEY = '767486d0c0f04b80a7de4af9fa92c9bd';
@@ -102,7 +107,8 @@ export default function Viaje({ route, navigation }) {
       </View>
       {/* Contenido scrollable */}
       <ScrollView contentContainerStyle={[styles.container, { paddingTop: 110 }]}>
-        {coords && (
+        {/* 3. Usa MapView y Marker solo si existen */}
+        {coords && MapView && (
           <TouchableOpacity onPress={() => setMapVisible(true)} activeOpacity={0.8}>
             <MapView
               style={styles.map}
@@ -112,26 +118,29 @@ export default function Viaje({ route, navigation }) {
                 latitudeDelta: 0.1,
                 longitudeDelta: 0.1,
               }}
-              pointerEvents="none" // Para que el mapa pequeño no sea interactivo
+              pointerEvents="none"
             >
-              <Marker coordinate={{ latitude: coords.lat, longitude: coords.lng }} />
+              {Marker && <Marker coordinate={{ latitude: coords.lat, longitude: coords.lng }} />}
             </MapView>
           </TouchableOpacity>
         )}
         {/* Modal para el mapa grande */}
         <Modal visible={mapVisible} animationType="slide">
           <View style={styles.modalContainer}>
-            <MapView
-              style={styles.fullMap}
-              initialRegion={{
-                latitude: coords?.lat || 0,
-                longitude: coords?.lng || 0,
-                latitudeDelta: 0.05,
-                longitudeDelta: 0.05,
-              }}
-            >
-              <Marker coordinate={{ latitude: coords?.lat || 0, longitude: coords?.lng || 0 }} />
-            </MapView>
+            {/* 4. También aquí, verifica MapView y Marker */}
+            {MapView && Marker && (
+              <MapView
+                style={styles.fullMap}
+                initialRegion={{
+                  latitude: coords?.lat || 0,
+                  longitude: coords?.lng || 0,
+                  latitudeDelta: 0.05,
+                  longitudeDelta: 0.05,
+                }}
+              >
+                <Marker coordinate={{ latitude: coords?.lat || 0, longitude: coords?.lng || 0 }} />
+              </MapView>
+            )}
             <TouchableOpacity style={styles.closeButton} onPress={() => setMapVisible(false)}>
               <Text style={styles.closeButtonText}>Cerrar mapa</Text>
             </TouchableOpacity>

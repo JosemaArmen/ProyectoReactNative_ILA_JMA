@@ -1,4 +1,4 @@
-package com.ineslarr.appPhotoTripJMLILA
+import com.ineslarr.appPhotoTripJMLILA.BuildConfig
 
 import android.app.Application
 import android.content.res.Configuration

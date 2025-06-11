@@ -1,4 +1,5 @@
-package com.ineslarr.appPhotoTripJMLILA
+import com.ineslarr.appPhotoTripJMLILA.R
+import com.ineslarr.appPhotoTripJMLILA.BuildConfig
 
 import android.os.Build
 import android.os.Bundle
