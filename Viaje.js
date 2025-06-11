@@ -1,38 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Modal, Platform } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Modal } from 'react-native';
 import { ref, get } from 'firebase/database';
 import { db } from './firebaseConfig';
 import axios from 'axios';
-
-let MapView, Marker;
-if (Platform.OS !== 'web') {
-  MapView = require('react-native-maps').default;
-  Marker = require('react-native-maps').Marker;
-}
-
-// Reemplaza con tu propia API key de OpenCage
-const OPENCAGE_API_KEY = '767486d0c0f04b80a7de4af9fa92c9bd';
-
-async function getCountryDataFromLocation(ubicacion) {
-  if (!ubicacion) return { countryCode: null, coords: null };
-
-  try {
-    const response = await axios.get(
-      `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(ubicacion)}&key=${OPENCAGE_API_KEY}&language=es`
-    );
-
-    if (response.data && response.data.results.length > 0) {
-      const countryCode = response.data.results[0].components['country_code'];
-      const coords = response.data.results[0].geometry;
-      return { countryCode, coords };
-    } else {
-      return { countryCode: null, coords: null };
-    }
-  } catch (error) {
-    console.error('Error al obtener el país:', error);
-    return { countryCode: null, coords: null };
-  }
-}
+import MapView from './MapView';
 
 export default function Viaje({ route, navigation }) {
   const { viajeId } = route.params;
@@ -44,6 +15,30 @@ export default function Viaje({ route, navigation }) {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoModalVisible, setPhotoModalVisible] = useState(false);
   const [photoCountryCodes, setPhotoCountryCodes] = useState({});
+
+  // Reemplaza con tu propia API key de OpenCage
+  const OPENCAGE_API_KEY = '767486d0c0f04b80a7de4af9fa92c9bd';
+
+  async function getCountryDataFromLocation(ubicacion) {
+    if (!ubicacion) return { countryCode: null, coords: null };
+
+    try {
+      const response = await axios.get(
+        `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(ubicacion)}&key=${OPENCAGE_API_KEY}&language=es`
+      );
+
+      if (response.data && response.data.results.length > 0) {
+        const countryCode = response.data.results[0].components['country_code'];
+        const coords = response.data.results[0].geometry;
+        return { countryCode, coords };
+      } else {
+        return { countryCode: null, coords: null };
+      }
+    } catch (error) {
+      console.error('Error al obtener el país:', error);
+      return { countryCode: null, coords: null };
+    }
+  }
 
   useEffect(() => {
     const fetchViaje = async () => {
@@ -108,7 +103,7 @@ export default function Viaje({ route, navigation }) {
       {/* Contenido scrollable */}
       <ScrollView contentContainerStyle={[styles.container, { paddingTop: 110 }]}>
         {/* 3. Usa MapView y Marker solo si existen */}
-        {coords && MapView && (
+        {coords && (
           <TouchableOpacity onPress={() => setMapVisible(true)} activeOpacity={0.8}>
             <MapView
               style={styles.map}
@@ -120,7 +115,7 @@ export default function Viaje({ route, navigation }) {
               }}
               pointerEvents="none"
             >
-              {Marker && <Marker coordinate={{ latitude: coords.lat, longitude: coords.lng }} />}
+              <Marker coordinate={{ latitude: coords.lat, longitude: coords.lng }} />
             </MapView>
           </TouchableOpacity>
         )}
@@ -128,19 +123,17 @@ export default function Viaje({ route, navigation }) {
         <Modal visible={mapVisible} animationType="slide">
           <View style={styles.modalContainer}>
             {/* 4. También aquí, verifica MapView y Marker */}
-            {MapView && Marker && (
-              <MapView
-                style={styles.fullMap}
-                initialRegion={{
-                  latitude: coords?.lat || 0,
-                  longitude: coords?.lng || 0,
-                  latitudeDelta: 0.05,
-                  longitudeDelta: 0.05,
-                }}
-              >
-                <Marker coordinate={{ latitude: coords?.lat || 0, longitude: coords?.lng || 0 }} />
-              </MapView>
-            )}
+            <MapView
+              style={styles.fullMap}
+              initialRegion={{
+                latitude: coords?.lat || 0,
+                longitude: coords?.lng || 0,
+                latitudeDelta: 0.05,
+                longitudeDelta: 0.05,
+              }}
+            >
+              <Marker coordinate={{ latitude: coords?.lat || 0, longitude: coords?.lng || 0 }} />
+            </MapView>
             <TouchableOpacity style={styles.closeButton} onPress={() => setMapVisible(false)}>
               <Text style={styles.closeButtonText}>Cerrar mapa</Text>
             </TouchableOpacity>
