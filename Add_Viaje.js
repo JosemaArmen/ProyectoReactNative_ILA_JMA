@@ -13,7 +13,7 @@ export default function Add_Viaje() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [titulo, setTitulo] = useState('');
   const [fechas, setFechas] = useState('');
-  const [tiempo, setTiempo] = useState('');
+  // const [tiempo, setTiempo] = useState(''); // Eliminar este estado
   const [modalVisible, setModalVisible] = useState(false);
   const [imagen, setImagen] = useState(null);
   const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
@@ -92,7 +92,7 @@ export default function Add_Viaje() {
           const data = snapshot.val();
           setTitulo(data.nombre || '');
           setFechas(data.fecha || '');
-          setTiempo(data.tiempo || '');
+          // setTiempo(data.tiempo || ''); // Eliminar esta línea
           setImagen(data.imagen || null);
           setMostrarFormulario(true);
           setViajeActualExiste(true);
@@ -114,16 +114,16 @@ export default function Add_Viaje() {
   }, []);
 
   useEffect(() => {
-    if (mostrarFormulario && (titulo || fechas || tiempo || imagen)) {
+    if (mostrarFormulario && (titulo || fechas || imagen)) {
       set(ref(db, 'viaje_actual'), {
         nombre: titulo,
         fecha: fechas,
-        tiempo: tiempo,
+        // tiempo: tiempo, // Eliminar este campo
         imagen: imagen || null,
       });
       setViajeActualExiste(true);
     }
-  }, [titulo, fechas, tiempo, imagen, mostrarFormulario]);
+  }, [titulo, fechas, imagen, mostrarFormulario]);
 
   const pickImage = async () => {
     if (Platform.OS === 'android') {
@@ -293,10 +293,9 @@ export default function Add_Viaje() {
   };
 
   const puedeFinalizarViaje =
-  !!titulo.trim() &&
-  !!fechas.trim() &&
-  !!tiempo.trim() &&
-  fotos.length > 0;
+    !!titulo.trim() &&
+    !!fechas.trim() &&
+    fotos.length > 0;
 
   if (viajeActualExiste === null) {
     return <Text style={{ marginTop: 40, textAlign: 'center' }}>Cargando...</Text>;
@@ -321,7 +320,6 @@ export default function Add_Viaje() {
             onPress={() => {
               setTitulo('');
               setFechas('');
-              setTiempo('');
               setImagen(null);
               setFotos([]);
               setFechaInicio(null);
@@ -383,6 +381,7 @@ export default function Add_Viaje() {
         minimumDate={pickerMode === 'end' && fechaInicio ? fechaInicio : undefined}
       />
       {/* Campo Tiempo atmosférico */}
+      {/* 
       <View style={styles.inputGroup}>
         <TextInput
           style={styles.input}
@@ -392,6 +391,7 @@ export default function Add_Viaje() {
           onChangeText={setTiempo}
         />
       </View>
+      */}
       {imagen && (
         <Image source={{ uri: imagen }} style={{ width: 100, height: 100, marginBottom: 10 }} />
       )}
