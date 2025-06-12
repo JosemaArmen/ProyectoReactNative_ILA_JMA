@@ -31,6 +31,9 @@ export default function Add_Viaje() {
   // Modal para confirmar la finalización del viaje
   const [finalizarModalVisible, setFinalizarModalVisible] = useState(false);
 
+  // Añade este estado para el modal de cancelar viaje
+  const [cancelarModalVisible, setCancelarModalVisible] = useState(false);
+
   // Cargar fotos al iniciar o cuando se añade una nueva
   const cargarFotos = async () => {
     const fotosRef = ref(db, 'viaje_actual/fotos');
@@ -239,6 +242,19 @@ export default function Add_Viaje() {
     setFinalizarModalVisible(false);
   };
 
+  // Función para cancelar el viaje actual
+  const cancelarViaje = async () => {
+    try {
+      await remove(ref(db, 'viaje_actual'));
+      setViajeActualExiste(false);
+      setMostrarFormulario(false);
+      Alert.alert('Viaje cancelado', 'El viaje actual ha sido eliminado.');
+    } catch (e) {
+      Alert.alert('Error', 'No se pudo cancelar el viaje.');
+    }
+    setCancelarModalVisible(false);
+  };
+
   const puedeFinalizarViaje =
   !!titulo.trim() &&
   !!fechas.trim() &&
@@ -276,7 +292,7 @@ export default function Add_Viaje() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>NUEVA AVENTURA</Text>
+      <Text style={styles.tituloAventura}>NUEVA AVENTURA</Text>
       <TextInput
         style={styles.input}
         placeholder="Título del viaje"
@@ -425,16 +441,19 @@ export default function Add_Viaje() {
                   setEditandoUbicacion(false);
                   setFotoEditandoUbicacion(null);
                 }}
-                style={styles.cancelButtonGrande}
+                style={styles.modalButtonSmall}
               >
-                <Text style={styles.cancelButtonTextGrande}>Cancelar</Text>
+                <Text style={styles.modalButtonTextSmall}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={editandoUbicacion ? guardarNuevaUbicacionFoto : guardarFotoConUbicacion}
-                style={[styles.ubicacionButton, { opacity: ubicacionSeleccionada && !subiendo ? 1 : 0.5 }]}
+                style={[
+                  styles.modalButtonSmallGreen,
+                  { opacity: ubicacionSeleccionada && !subiendo ? 1 : 0.5 }
+                ]}
                 disabled={!ubicacionSeleccionada || subiendo}
               >
-                <Text style={styles.ubicacionButtonText}>{subiendo ? 'Guardando...' : 'Aceptar'}</Text>
+                <Text style={styles.modalButtonTextSmall}>{subiendo ? 'Guardando...' : 'Aceptar'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -509,19 +528,28 @@ export default function Add_Viaje() {
       </Modal>
 
       {/* Botón FINALIZAR VIAJE */}
-      {viajeActualExiste && (
-        <TouchableOpacity
-          style={[
-            styles.finalizarButton,
-            { opacity: puedeFinalizarViaje ? 1 : 0.5 }
-          ]}
-          onPress={() => {
-            if (puedeFinalizarViaje) setFinalizarModalVisible(true);
-          }}
-          disabled={!puedeFinalizarViaje}
-        >
-          <Text style={styles.finalizarButtonText}>FINALIZAR VIAJE</Text>
-        </TouchableOpacity>
+      {mostrarFormulario && (
+        <>
+          <TouchableOpacity
+            style={[
+              styles.finalizarButton,
+              { opacity: puedeFinalizarViaje ? 1 : 0.5 }
+            ]}
+            onPress={() => {
+              if (puedeFinalizarViaje) setFinalizarModalVisible(true);
+            }}
+            disabled={!puedeFinalizarViaje}
+          >
+            <Text style={styles.finalizarButtonText}>FINALIZAR VIAJE</Text>
+          </TouchableOpacity>
+          {/* Botón cancelar viaje */}
+          <TouchableOpacity
+            style={styles.cancelarViajeButton}
+            onPress={() => setCancelarModalVisible(true)}
+          >
+            <Text style={styles.cancelarViajeButtonText}>CANCELAR VIAJE</Text>
+          </TouchableOpacity>
+        </>
       )}
 
       {/* Modal de confirmación para finalizar viaje */}
@@ -538,16 +566,46 @@ export default function Add_Viaje() {
             </Text>
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <TouchableOpacity
-                style={styles.cancelButtonGrande}
+                style={styles.modalButtonSmall}
                 onPress={() => setFinalizarModalVisible(false)}
               >
-                <Text style={styles.cancelButtonTextGrande}>Cancelar</Text>
+                <Text style={styles.modalButtonTextSmall}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.ubicacionButton}
+                style={styles.modalButtonSmallGreen}
                 onPress={finalizarViaje}
               >
-                <Text style={styles.ubicacionButtonText}>Confirmar</Text>
+                <Text style={styles.modalButtonTextSmall}>Confirmar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de confirmación para cancelar viaje */}
+      <Modal
+        visible={cancelarModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCancelarModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>
+              ¿Seguro que quieres cancelar y eliminar este viaje?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                style={styles.modalButtonSmall}
+                onPress={() => setCancelarModalVisible(false)}
+              >
+                <Text style={styles.modalButtonTextSmall}>No</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalButtonSmallGreen}
+                onPress={cancelarViaje}
+              >
+                <Text style={styles.modalButtonTextSmall}>Sí, cancelar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -563,6 +621,27 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     backgroundColor: '#f9f9f9',
+  },
+  // Nuevo estilo para el título bonito y diferente
+  tituloAventura: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#1976d2',
+    textAlign: 'center',
+    marginTop: 48,
+    marginBottom: 32,
+    letterSpacing: 4,
+    fontStyle: 'normal',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    textShadowColor: '#90caf9',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+    backgroundColor: 'transparent',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    borderRadius: 0,
+    elevation: 0,
+    shadowColor: 'transparent',
   },
   text: {
     fontSize: 24,
@@ -667,6 +746,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  // Botones grandes (en columna, ancho completo)
+  modalButtonSmall: {
+    flex: 1,
+    backgroundColor: '#dc3545',
+    borderRadius: 8,
+    paddingVertical: 12,
+    marginHorizontal: 4,
+    alignItems: 'center',
+    minWidth: 100,
+    maxWidth: 140,
+  },
+  modalButtonSmallGreen: {
+    flex: 1,
+    backgroundColor: '#28a745',
+    borderRadius: 8,
+    paddingVertical: 12,
+    marginHorizontal: 4,
+    alignItems: 'center',
+    minWidth: 100,
+    maxWidth: 140,
+  },
+  modalButtonTextSmall: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   finalizarButton: {
     position: 'absolute',
     bottom: 100,
@@ -681,6 +786,23 @@ const styles = StyleSheet.create({
   finalizarButtonText: {
     color: '#fff',
     fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  cancelarViajeButton: {
+    position: 'absolute',
+    bottom: 40,
+    left: 80,
+    right: 80,
+    backgroundColor: '#dc3545',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  cancelarViajeButtonText: {
+    color: '#fff',
+    fontSize: 15,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
