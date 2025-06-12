@@ -173,6 +173,25 @@ export default function Add_Viaje() {
     }
   }, [ubicacionTexto]);
 
+  // Función para obtener el clima actual de una ubicación por coordenadas
+  const obtenerClimaPorCoordenadas = async (lat, lng) => {
+    try {
+      const apiKey = 'd748384c6141895207b0f15f56cda724';
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${apiKey}&lang=es&units=metric`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.weather && data.weather.length > 0) {
+        return {
+          descripcion: data.weather[0].description, // <-- en español
+          temp: data.main.temp,
+        };
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  };
+
   // Guardar la foto en el siguiente índice libre del array
   const guardarFotoConUbicacion = async () => {
     if (!imagenSeleccionada || !ubicacionSeleccionada) return;
@@ -189,6 +208,26 @@ export default function Add_Viaje() {
       await uploadBytes(referencia, blob);
       const url = await getDownloadURL(referencia);
 
+      // Obtener coordenadas de la ubicación seleccionada
+      const placeId = ubicacionSeleccionada.place_id;
+      let lat = null, lng = null;
+      if (placeId) {
+        const geoRes = await fetch(
+          `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry&key=AIzaSyDH0v9dvfBAdnQ657z_3g6_ZtD1_sOxTOc`
+        );
+        const geoData = await geoRes.json();
+        if (geoData.result && geoData.result.geometry && geoData.result.geometry.location) {
+          lat = geoData.result.geometry.location.lat;
+          lng = geoData.result.geometry.location.lng;
+        }
+      }
+
+      // Obtener clima actual de esa ubicación
+      let climaFoto = null;
+      if (lat && lng) {
+        climaFoto = await obtenerClimaPorCoordenadas(lat, lng);
+      }
+
       const fotosRef = ref(db, 'viaje_actual/fotos');
       const snapshot = await get(fotosRef);
       let fotosArray = [];
@@ -200,11 +239,33 @@ export default function Add_Viaje() {
           fotosArray = Object.values(data);
         }
       }
+
+      // Guardar la foto SIN el clima
       fotosArray.push({
         url,
         ubicacion: ubicacionSeleccionada.description,
+        // NO guardar clima aquí
       });
       await set(fotosRef, fotosArray);
+
+      // Si es la primera foto, guarda el campo "tiempo" en viaje_actual
+      if (fotosArray.length === 1 && climaFoto) {
+        let tiempoTexto = '';
+        if (climaFoto.descripcion && climaFoto.temp) {
+          tiempoTexto = `${climaFoto.descripcion}, ${Math.round(climaFoto.temp)}ºC`;
+        } else if (climaFoto.descripcion) {
+          tiempoTexto = climaFoto.descripcion;
+        } else if (climaFoto.temp) {
+          tiempoTexto = `${Math.round(climaFoto.temp)}ºC`;
+        } else {
+          tiempoTexto = 'Sin datos';
+        }
+        const viajeActualRef = ref(db, 'viaje_actual');
+        await set(viajeActualRef, {
+          ...(await (await get(viajeActualRef)).val()),
+          tiempo: tiempoTexto,
+        });
+      }
 
       setImagenSeleccionada(null);
       setUbicacionSeleccionada(null);
@@ -232,7 +293,31 @@ export default function Add_Viaje() {
         fotosArray = Object.values(data);
       }
     }
+
+    // Obtener coordenadas de la nueva ubicación
+    const placeId = ubicacionSeleccionada.place_id;
+    let lat = null, lng = null;
+    if (placeId) {
+      const geoRes = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry&key=AIzaSyDH0v9dvfBAdnQ657z_3g6_ZtD1_sOxTOc`
+      );
+      const geoData = await geoRes.json();
+      if (geoData.result && geoData.result.geometry && geoData.result.geometry.location) {
+        lat = geoData.result.geometry.location.lat;
+        lng = geoData.result.geometry.location.lng;
+      }
+    }
+
+    // Obtener clima de la nueva ubicación
+    let climaFoto = null;
+    if (lat && lng) {
+      climaFoto = await obtenerClimaPorCoordenadas(lat, lng);
+    }
+
+    // Actualizar ubicación y clima de la foto
     fotosArray[fotoEditandoUbicacion.idx].ubicacion = ubicacionSeleccionada.description;
+    fotosArray[fotoEditandoUbicacion.idx].clima = climaFoto;
+
     await set(fotosRef, fotosArray);
     await cargarFotos();
     setEditandoUbicacion(false);
@@ -240,7 +325,7 @@ export default function Add_Viaje() {
     setUbicacionModalVisible(false);
     setUbicacionSeleccionada(null);
     setUbicacionTexto('');
-    Alert.alert('Ubicación actualizada');
+    Alert.alert('Ubicación y clima actualizados');
   };
 
   // Función para finalizar el viaje
@@ -251,13 +336,16 @@ export default function Add_Viaje() {
       if (snapshot.exists()) {
         const viajeData = snapshot.val();
 
+        // COPIAR el campo "tiempo" tal cual está en viaje_actual
+        // (No recalcularlo)
+        // viajeData.tiempo ya existe y es el string correcto
+
         // Leer los viajes existentes
         const viajesRef = ref(db, 'viajes');
         const viajesSnap = await get(viajesRef);
         let nextNumber = 1;
         if (viajesSnap.exists()) {
           const viajes = viajesSnap.val();
-          // Buscar el siguiente número disponible
           const numeros = Object.keys(viajes).map(Number).filter(n => !isNaN(n));
           if (numeros.length > 0) {
             nextNumber = Math.max(...numeros) + 1;
@@ -296,6 +384,29 @@ export default function Add_Viaje() {
     !!titulo.trim() &&
     !!fechas.trim() &&
     fotos.length > 0;
+
+  // Nuevo estado para el clima
+  const [clima, setClima] = useState(null);
+
+  const obtenerClima = async (ubicacion) => {
+    try {
+      const apiKey = 'd748384c6141895207b0f15f56cda724'; // <-- Pon aquí tu API key de OpenWeatherMap
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(ubicacion)}&appid=${apiKey}&lang=es&units=metric`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.weather && data.weather.length > 0) {
+        setClima({
+          descripcion: data.weather[0].description,
+          temp: data.main.temp,
+          icon: data.weather[0].icon,
+        });
+      } else {
+        setClima(null);
+      }
+    } catch (e) {
+      setClima(null);
+    }
+  };
 
   if (viajeActualExiste === null) {
     return <Text style={{ marginTop: 40, textAlign: 'center' }}>Cargando...</Text>;
@@ -500,6 +611,7 @@ export default function Add_Viaje() {
                       setUbicacionSeleccionada(item);
                       setUbicacionTexto(item.description);
                       setSugerencias([]);
+                      obtenerClima(item.description); // <-- Añade esta línea
                     }}
                     style={{
                       padding: 8,
@@ -972,5 +1084,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 1,
+  },
+  climaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  climaIcon: {
+    width: 40,
+    height: 40,
+  },
+  climaTexto: {
+    marginLeft: 8,
+    fontSize: 16,
   },
 });
