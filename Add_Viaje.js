@@ -4,6 +4,7 @@ import { ref, get, set, push, remove } from 'firebase/database';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db } from './firebaseConfig';
 import { launchImageLibrary } from 'react-native-image-picker';
+import DateTimePickerModal from "react-native-modal-datetime-picker"; // <-- IMPORTANTE
 
 const storage = getStorage();
 
@@ -33,6 +34,36 @@ export default function Add_Viaje() {
 
   // Añade este estado para el modal de cancelar viaje
   const [cancelarModalVisible, setCancelarModalVisible] = useState(false);
+
+  // ----------- NUEVO: Estados para el calendario -----------
+  const [fechaInicio, setFechaInicio] = useState(null);
+  const [fechaFin, setFechaFin] = useState(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerMode, setPickerMode] = useState('start'); // 'start' o 'end'
+
+  // ----------- NUEVO: Funciones para el calendario -----------
+  const handleConfirm = (date) => {
+    if (pickerMode === 'start') {
+      setFechaInicio(date);
+      setShowPicker(false);
+      setPickerMode('end');
+      setTimeout(() => setShowPicker(true), 400); // Abre el siguiente picker tras cerrar el anterior
+    } else {
+      setFechaFin(date);
+      setShowPicker(false);
+      // Actualiza el campo fechas automáticamente
+      if (fechaInicio && date) {
+        setFechas(`${fechaInicio.toLocaleDateString()} - ${date.toLocaleDateString()}`);
+      }
+    }
+  };
+
+  const showDatePicker = (mode) => {
+    setPickerMode(mode);
+    setShowPicker(true);
+  };
+
+  // ----------------------------------------------------------
 
   // Cargar fotos al iniciar o cuando se añade una nueva
   const cargarFotos = async () => {
@@ -66,6 +97,12 @@ export default function Add_Viaje() {
           setMostrarFormulario(true);
           setViajeActualExiste(true);
           await cargarFotos();
+          // Si hay fechas guardadas, intenta parsearlas
+          if (data.fecha && data.fecha.includes('-')) {
+            const [ini, fin] = data.fecha.split('-').map(f => f.trim());
+            setFechaInicio(new Date(ini.split('/').reverse().join('-')));
+            setFechaFin(new Date(fin.split('/').reverse().join('-')));
+          }
         } else {
           setViajeActualExiste(false);
         }
@@ -267,25 +304,34 @@ export default function Add_Viaje() {
 
   if (!viajeActualExiste && !mostrarFormulario) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.text}>Empieza una nueva aventura</Text>
-        <TouchableOpacity
-          onPress={() => {
-            // Limpiar todos los campos antes de mostrar el formulario
-            setTitulo('');
-            setFechas('');
-            setTiempo('');
-            setImagen(null);
-            setFotos([]);
-            setMostrarFormulario(true);
-          }}
-        >
-          <Image
-            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/992/992651.png' }}
-            style={styles.icon}
-          />
-          <Text style={styles.mas}>+</Text>
-        </TouchableOpacity>
+      <View style={styles.nuevaAventuraContainer}>
+        <View style={styles.nuevaAventuraCard}>
+          <View style={styles.nuevaAventuraIconCircle}>
+            <Image
+              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/992/992651.png' }}
+              style={styles.nuevaAventuraIcon}
+            />
+          </View>
+          <Text style={styles.nuevaAventuraTitulo}>¡Empieza una nueva aventura!</Text>
+          <Text style={styles.nuevaAventuraSubtitulo}>
+            Crea un nuevo viaje y guarda tus mejores recuerdos.
+          </Text>
+          <TouchableOpacity
+            style={styles.nuevaAventuraBoton}
+            onPress={() => {
+              setTitulo('');
+              setFechas('');
+              setTiempo('');
+              setImagen(null);
+              setFotos([]);
+              setFechaInicio(null);
+              setFechaFin(null);
+              setMostrarFormulario(true);
+            }}
+          >
+            <Text style={styles.nuevaAventuraBotonTexto}>Crear viaje</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -293,24 +339,59 @@ export default function Add_Viaje() {
   return (
     <View style={styles.container}>
       <Text style={styles.tituloAventura}>NUEVA AVENTURA</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Título del viaje"
-        value={titulo}
-        onChangeText={setTitulo}
+      {/* Campo Título */}
+      <View style={styles.inputGroup}>
+        <TextInput
+          style={styles.input}
+          placeholder="Introduce el título del viaje"
+          placeholderTextColor="#b0b0b0"
+          value={titulo}
+          onChangeText={setTitulo}
+        />
+      </View>
+      {/* Campo Fechas */}
+      <View style={styles.inputGroup}>
+        <TouchableOpacity
+          style={styles.input}
+          onPress={() => showDatePicker('start')}
+        >
+          <Text style={{
+            color: fechaInicio ? '#222' : '#b0b0b0',
+            fontSize: 16,
+          }}>
+            {fechaInicio ? `Desde: ${fechaInicio.toLocaleDateString()}` : 'Selecciona fecha de inicio'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.input, { marginTop: 8 }]}
+          onPress={() => showDatePicker('end')}
+          disabled={!fechaInicio}
+        >
+          <Text style={{
+            color: fechaFin ? '#222' : '#b0b0b0',
+            fontSize: 16,
+          }}>
+            {fechaFin ? `Hasta: ${fechaFin.toLocaleDateString()}` : 'Selecciona fecha de fin'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <DateTimePickerModal
+        isVisible={showPicker}
+        mode="date"
+        onConfirm={handleConfirm}
+        onCancel={() => setShowPicker(false)}
+        minimumDate={pickerMode === 'end' && fechaInicio ? fechaInicio : undefined}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Fechas del viaje"
-        value={fechas}
-        onChangeText={setFechas}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Tiempo atmosférico"
-        value={tiempo}
-        onChangeText={setTiempo}
-      />
+      {/* Campo Tiempo atmosférico */}
+      <View style={styles.inputGroup}>
+        <TextInput
+          style={styles.input}
+          placeholder="Tiempo atmosférico (soleado, lluvioso, etc.)"
+          placeholderTextColor="#b0b0b0"
+          value={tiempo}
+          onChangeText={setTiempo}
+        />
+      </View>
       {imagen && (
         <Image source={{ uri: imagen }} style={{ width: 100, height: 100, marginBottom: 10 }} />
       )}
@@ -652,12 +733,34 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    marginBottom: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1.5,
+    borderColor: '#1976d2',
+    borderRadius: 12,
+    backgroundColor: '#f5faff',
+    fontSize: 16,
+    color: '#222',
+    elevation: 2,
+    shadowColor: '#1976d2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+  },
+  inputGroup: {
+    width: '100%',
+    marginBottom: 24,
+    position: 'relative',
+  },
+  inputLabel: {
+    position: 'absolute',
+    left: 18,
+    bottom: -22,
+    fontSize: 13,
+    color: '#1976d2',
+    backgroundColor: 'transparent',
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   botonMas: {
     width: 56,
@@ -803,6 +906,70 @@ const styles = StyleSheet.create({
   cancelarViajeButtonText: {
     color: '#fff',
     fontSize: 15,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  // Nuevos estilos para la pantalla de nueva aventura
+  nuevaAventuraContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#e3f2fd',
+  },
+  nuevaAventuraCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#1976d2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    width: 320,
+    maxWidth: '90%',
+  },
+  nuevaAventuraIconCircle: {
+    backgroundColor: '#1976d2',
+    borderRadius: 48,
+    width: 96,
+    height: 96,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 18,
+    elevation: 4,
+  },
+  nuevaAventuraIcon: {
+    width: 64,
+    height: 64,
+    tintColor: '#fff',
+  },
+  nuevaAventuraTitulo: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 10,
+    textAlign: 'center',
+    letterSpacing: 1,
+  },
+  nuevaAventuraSubtitulo: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 28,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  nuevaAventuraBoton: {
+    backgroundColor: '#1976d2',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 36,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  nuevaAventuraBotonTexto: {
+    color: '#fff',
+    fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
