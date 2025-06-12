@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, Modal, Alert, PermissionsAndroid, Platform, ScrollView } from 'react-native';
-import { ref, get, set } from 'firebase/database';
+import { ref, get, set, push, remove } from 'firebase/database';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db } from './firebaseConfig';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -27,6 +27,9 @@ export default function Add_Viaje() {
   // Para edición de ubicación de una foto ya existente
   const [editandoUbicacion, setEditandoUbicacion] = useState(false);
   const [fotoEditandoUbicacion, setFotoEditandoUbicacion] = useState(null);
+
+  // Modal para confirmar la finalización del viaje
+  const [finalizarModalVisible, setFinalizarModalVisible] = useState(false);
 
   // Cargar fotos al iniciar o cuando se añade una nueva
   const cargarFotos = async () => {
@@ -200,6 +203,48 @@ export default function Add_Viaje() {
     Alert.alert('Ubicación actualizada');
   };
 
+  // Función para finalizar el viaje
+  const finalizarViaje = async () => {
+    try {
+      const viajeRef = ref(db, 'viaje_actual');
+      const snapshot = await get(viajeRef);
+      if (snapshot.exists()) {
+        const viajeData = snapshot.val();
+
+        // Leer los viajes existentes
+        const viajesRef = ref(db, 'viajes');
+        const viajesSnap = await get(viajesRef);
+        let nextNumber = 1;
+        if (viajesSnap.exists()) {
+          const viajes = viajesSnap.val();
+          // Buscar el siguiente número disponible
+          const numeros = Object.keys(viajes).map(Number).filter(n => !isNaN(n));
+          if (numeros.length > 0) {
+            nextNumber = Math.max(...numeros) + 1;
+          }
+        }
+
+        // Guardar el viaje con el número como clave
+        await set(ref(db, `viajes/${nextNumber}`), viajeData);
+
+        // Eliminar viaje_actual
+        await remove(viajeRef);
+        setViajeActualExiste(false);
+        setMostrarFormulario(false);
+        Alert.alert('Viaje finalizado', 'Tu viaje ha sido guardado en la biblioteca de viajes.');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'No se pudo finalizar el viaje.');
+    }
+    setFinalizarModalVisible(false);
+  };
+
+  const puedeFinalizarViaje =
+  !!titulo.trim() &&
+  !!fechas.trim() &&
+  !!tiempo.trim() &&
+  fotos.length > 0;
+
   if (viajeActualExiste === null) {
     return <Text style={{ marginTop: 40, textAlign: 'center' }}>Cargando...</Text>;
   }
@@ -208,7 +253,17 @@ export default function Add_Viaje() {
     return (
       <View style={styles.container}>
         <Text style={styles.text}>Empieza una nueva aventura</Text>
-        <TouchableOpacity onPress={() => setMostrarFormulario(true)}>
+        <TouchableOpacity
+          onPress={() => {
+            // Limpiar todos los campos antes de mostrar el formulario
+            setTitulo('');
+            setFechas('');
+            setTiempo('');
+            setImagen(null);
+            setFotos([]);
+            setMostrarFormulario(true);
+          }}
+        >
           <Image
             source={{ uri: 'https://cdn-icons-png.flaticon.com/512/992/992651.png' }}
             style={styles.icon}
@@ -452,6 +507,52 @@ export default function Add_Viaje() {
           </View>
         </View>
       </Modal>
+
+      {/* Botón FINALIZAR VIAJE */}
+      {viajeActualExiste && (
+        <TouchableOpacity
+          style={[
+            styles.finalizarButton,
+            { opacity: puedeFinalizarViaje ? 1 : 0.5 }
+          ]}
+          onPress={() => {
+            if (puedeFinalizarViaje) setFinalizarModalVisible(true);
+          }}
+          disabled={!puedeFinalizarViaje}
+        >
+          <Text style={styles.finalizarButtonText}>FINALIZAR VIAJE</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Modal de confirmación para finalizar viaje */}
+      <Modal
+        visible={finalizarModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFinalizarModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>
+              ¿Seguro que quieres finalizar el viaje?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                style={styles.cancelButtonGrande}
+                onPress={() => setFinalizarModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonTextGrande}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.ubicacionButton}
+                onPress={finalizarViaje}
+              >
+                <Text style={styles.ubicacionButtonText}>Confirmar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -565,5 +666,22 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  finalizarButton: {
+    position: 'absolute',
+    bottom: 100,
+    left: 16,
+    right: 16,
+    backgroundColor: '#ff9800',
+    borderRadius: 8,
+    paddingVertical: 16,
+    alignItems: 'center',
+    elevation: 4,
+  },
+  finalizarButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
 });
