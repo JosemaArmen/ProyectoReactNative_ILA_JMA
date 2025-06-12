@@ -3,9 +3,13 @@ import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, Touchable
 import { ref, get } from 'firebase/database';
 import { db } from './firebaseConfig';
 import axios from 'axios';
-import MapView from './MapView';
+import MapView, { Marker } from './MapView';
 
 export default function Viaje({ route, navigation }) {
+  console.log('Viaje COMPONENTE MONTADO');
+  console.log('route:', route);
+  console.log('route.params:', route?.params);
+
   const { viajeId } = route.params;
   const [viaje, setViaje] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +49,7 @@ export default function Viaje({ route, navigation }) {
       const viajeRef = ref(db, `viajes/${viajeId}`);
       const snapshot = await get(viajeRef);
       const viajeData = snapshot.val();
+      console.log('Datos de viaje:', viajeData); // <-- Añade esto
       setViaje(viajeData);
 
       // Obtener countryCode y coords del viaje principal

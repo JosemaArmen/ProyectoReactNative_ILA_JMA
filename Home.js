@@ -101,13 +101,13 @@ function Home({ navigation, loggedIn, user, addUser, setLoggedIn }) {
       control_sesion = true;
       console.log("Session is active, user:", user.user.uid);
     } else {
-      control_sesion = false;
+      control_sesion = true;
       console.log("Session expired, logging out");
       addUser(null);
       setLoggedIn(false);
     }
   } else {
-    control_sesion = false;
+    control_sesion = true;
     console.log("User not logged in");
   }
 
