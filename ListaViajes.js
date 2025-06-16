@@ -4,6 +4,7 @@ import { getDatabase, ref, onValue, remove } from 'firebase/database';
 // import app from './firebaseConfig';
 import { db } from './firebaseConfig';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage';
 
 export default function ListaViajes({ navigation }) {
   const [viajes, setViajes] = useState([]);
@@ -44,18 +45,40 @@ export default function ListaViajes({ navigation }) {
     setModalVisible(true);
   };
 
-  const eliminarViaje = () => {
+  const eliminarViaje = async () => {
     const db = getDatabase();
-    remove(ref(db, `viajes/${viajeSeleccionado.id}`))
-      .then(() => {
-        setModalVisible(false);
-        setViajeSeleccionado(null);
-        // Aquí puedes actualizar la lista de viajes si lo necesitas
-      })
-      .catch(() => {
-        setModalVisible(false);
-        setViajeSeleccionado(null);
+    const storage = getStorage();
+
+    const viajeRef = ref(db, `viajes/${viajeSeleccionado.id}`);
+    onValue(viajeRef, async (snapshot) => {
+      const viajeData = snapshot.val();
+      const fotos = viajeData?.fotos || [];
+
+      // Eliminar cada imagen del Storage usando la URL
+      const deletePromises = fotos.map(foto => {
+        if (foto.url) {
+          const storagePath = getStoragePathFromUrl(foto.url);
+          if (storagePath) {
+            const imgRef = storageRef(storage, storagePath);
+            return deleteObject(imgRef).catch(() => {});
+          }
+        }
+        return Promise.resolve();
       });
+
+      await Promise.all(deletePromises);
+
+      // Eliminar el viaje de la base de datos
+      remove(viajeRef)
+        .then(() => {
+          setModalVisible(false);
+          setViajeSeleccionado(null);
+        })
+        .catch(() => {
+          setModalVisible(false);
+          setViajeSeleccionado(null);
+        });
+    }, { onlyOnce: true });
   };
 
   if (loading) {
@@ -117,6 +140,17 @@ export default function ListaViajes({ navigation }) {
       </Modal>
     </View>
   );
+}
+
+// Extrae el storage path de la URL de Firebase Storage
+function getStoragePathFromUrl(url) {
+  try {
+    const match = url.match(/\/o\/(.+)\?/);
+    if (match && match[1]) {
+      return decodeURIComponent(match[1]);
+    }
+  } catch (e) {}
+  return null;
 }
 
 const styles = StyleSheet.create({
