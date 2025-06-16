@@ -2,6 +2,14 @@ import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ListaViajes from './ListaViajes';
+import Add_Viaje from './Add_Viaje';
+// function Add_Viaje() {
+//   return (
+//     <View style={styles.container}>
+//       <Text style={styles.bigTitle}>Añadir viaje</Text>
+//     </View>
+//   );
+// }
 import { connect } from 'react-redux';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
@@ -34,8 +42,30 @@ function PagPrincipal({ navigation }) {
         },
       }}
     >
-      <Tab.Screen name="Lista de viajes" component={TripListScreen} />
-      <Tab.Screen name="Añadir viaje" component={AddTripScreen} />
+      <Tab.Screen
+        name="Lista de viajes"
+        component={TripListScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Image
+              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/1828/1828859.png' }} // Icono de lista
+              style={{ width: size, height: size, tintColor: color }}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+              name="Añadir viaje"
+              component={Add_Viaje}
+              options={{
+                tabBarIcon: ({ color, size }) => (
+                  <Image
+                    source={{ uri: 'https://cdn-icons-png.flaticon.com/512/992/992651.png' }} // Icono de +
+                    style={{ width: size, height: size, tintColor: color }}
+                  />
+                ),
+              }}
+            />
     </Tab.Navigator>
   );
 }

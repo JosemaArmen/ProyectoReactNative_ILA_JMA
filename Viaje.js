@@ -3,7 +3,7 @@ import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, Touchable
 import { ref, get } from 'firebase/database';
 import { db } from './firebaseConfig';
 import axios from 'axios';
-import MapView, { Marker } from 'react-native-maps'; // <--- Añadido
+import MapView, { Marker, Polyline } from 'react-native-maps'; // <-- añade Polyline
 
 // Reemplaza con tu propia API key de OpenCage
 const OPENCAGE_API_KEY = '767486d0c0f04b80a7de4af9fa92c9bd';
@@ -39,6 +39,7 @@ export default function Viaje({ route, navigation }) {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoModalVisible, setPhotoModalVisible] = useState(false);
   const [photoCountryCodes, setPhotoCountryCodes] = useState({});
+  const [photoCoords, setPhotoCoords] = useState([]); // Nuevo estado para coords de fotos
 
   useEffect(() => {
     const fetchViaje = async () => {
@@ -54,18 +55,23 @@ export default function Viaje({ route, navigation }) {
         setCoords(coords);
       }
 
-      // Obtener countryCode de cada foto
+      // Obtener countryCode y coords de cada foto
       if (viajeData && viajeData.fotos && Array.isArray(viajeData.fotos)) {
         const codes = {};
+        const coordsArr = [];
         await Promise.all(
           viajeData.fotos.map(async (foto, idx) => {
             if (foto.ubicacion) {
-              const { countryCode } = await getCountryDataFromLocation(foto.ubicacion);
+              const { countryCode, coords } = await getCountryDataFromLocation(foto.ubicacion);
               codes[idx] = countryCode;
+              if (coords) {
+                coordsArr.push({ ...coords, idx }); // idx para identificar la foto
+              }
             }
           })
         );
         setPhotoCountryCodes(codes);
+        setPhotoCoords(coordsArr); // Guardar coords de fotos
       }
 
       setLoading(false);
@@ -102,19 +108,35 @@ export default function Viaje({ route, navigation }) {
       </View>
       {/* Contenido scrollable */}
       <ScrollView contentContainerStyle={[styles.container, { paddingTop: 110 }]}>
-        {coords && (
+        {photoCoords.length > 0 && (
           <TouchableOpacity onPress={() => setMapVisible(true)} activeOpacity={0.8}>
             <MapView
               style={styles.map}
               initialRegion={{
-                latitude: coords.lat,
-                longitude: coords.lng,
+                latitude: photoCoords[0].lat,
+                longitude: photoCoords[0].lng,
                 latitudeDelta: 0.1,
                 longitudeDelta: 0.1,
               }}
-              pointerEvents="none" // Para que el mapa pequeño no sea interactivo
+              pointerEvents="none"
             >
-              <Marker coordinate={{ latitude: coords.lat, longitude: coords.lng }} />
+              {/* Mostrar un marker por cada foto */}
+              {photoCoords.map((coord, i) => (
+                <Marker
+                  key={i}
+                  coordinate={{ latitude: coord.lat, longitude: coord.lng }}
+                  pinColor="#ff9800"
+                />
+              ))}
+              {/* Polyline para unir los puntos */}
+              <Polyline
+                coordinates={photoCoords.map(coord => ({
+                  latitude: coord.lat,
+                  longitude: coord.lng,
+                }))}
+                strokeColor="#ff9800"
+                strokeWidth={3}
+              />
             </MapView>
           </TouchableOpacity>
         )}
@@ -124,13 +146,29 @@ export default function Viaje({ route, navigation }) {
             <MapView
               style={styles.fullMap}
               initialRegion={{
-                latitude: coords?.lat || 0,
-                longitude: coords?.lng || 0,
+                latitude: photoCoords[0]?.lat || 0,
+                longitude: photoCoords[0]?.lng || 0,
                 latitudeDelta: 0.05,
                 longitudeDelta: 0.05,
               }}
             >
-              <Marker coordinate={{ latitude: coords?.lat || 0, longitude: coords?.lng || 0 }} />
+              {/* Markers de fotos */}
+              {photoCoords.map((coord, i) => (
+                <Marker
+                  key={i}
+                  coordinate={{ latitude: coord.lat, longitude: coord.lng }}
+                  pinColor="#ff9800"
+                />
+              ))}
+              {/* Línea entre los puntos SOLO en el mapa grande */}
+              <Polyline
+                coordinates={photoCoords.map(coord => ({
+                  latitude: coord.lat,
+                  longitude: coord.lng,
+                }))}
+                strokeColor="#ff9800"
+                strokeWidth={4}
+              />
             </MapView>
             <TouchableOpacity style={styles.closeButton} onPress={() => setMapVisible(false)}>
               <Text style={styles.closeButtonText}>Cerrar mapa</Text>

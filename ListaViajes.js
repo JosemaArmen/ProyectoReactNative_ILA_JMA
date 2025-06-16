@@ -1,21 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { getDatabase, ref, onValue } from 'firebase/database';
-import app from './firebaseConfig'; // Asegúrate de tener tu configuración de Firebase aquí
+// import app from './firebaseConfig';
+import { db } from './firebaseConfig';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export default function ListaViajes({ navigation }) {
   const [viajes, setViajes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const db = getDatabase(app);
+    // const db = getDatabase(app);
     const viajesRef = ref(db, 'viajes');
     const unsubscribe = onValue(viajesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const lista = Object.entries(data).map(([id, item]) => ({
           id,
-          nombre: item.nombre || '', // <-- Añadido
+          nombre: item.nombre || '',
           ubicacion: item.ubicacion || '',
           foto:
             item.fotos &&
@@ -40,34 +42,65 @@ export default function ListaViajes({ navigation }) {
   }
 
   return (
-    <FlatList
-      data={viajes}
-      keyExtractor={item => item.id}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Viaje', { viajeId: item.id })}
-        >
-          <View style={styles.itemContainer}>
-            {item.foto ? (
-              <Image source={{ uri: item.foto }} style={styles.image} resizeMode="cover" />
-            ) : (
-              <View style={[styles.image, { justifyContent: 'center', alignItems: 'center' }]}>
-                <Text>Sin foto</Text>
-              </View>
-            )}
-            <Text style={styles.nombreViaje}>{item.nombre}</Text>
-          </View>
-        </TouchableOpacity>
-      )}
-      ListHeaderComponent={
+    <View style={{ flex: 1 }}>
+      {/* Encabezado fijo con icono como botón */}
+      <View style={styles.header}>
         <Text style={styles.tituloLista}>Lista de viajes</Text>
-      }
-      contentContainerStyle={{ padding: 16 }}
-    />
+        <TouchableOpacity
+          style={styles.userIcon}
+          onPress={() => {
+            navigation.navigate('Account');
+          }}
+        >
+          <Ionicons name="person-circle-outline" size={40} color="#2a3d66" />
+        </TouchableOpacity>
+      </View>
+      <FlatList
+        data={viajes}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Viaje', { viajeId: item.id })}
+          >
+            <View style={styles.itemContainer}>
+              {item.foto ? (
+                <Image source={{ uri: item.foto }} style={styles.image} resizeMode="cover" />
+              ) : (
+                <View style={[styles.image, { justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text>Sin foto</Text>
+                </View>
+              )}
+              <Text style={styles.nombreViaje}>{item.nombre}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+        contentContainerStyle={{ padding: 16, paddingTop: 0 }}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  header: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center', // Centra el contenido horizontalmente
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    zIndex: 10,
+    elevation: 4,
+    position: 'relative', // Necesario para el icono absoluto
+  },
+  userIcon: {
+    position: 'absolute',
+    right: 24,
+    top: 50,
+  },
   itemContainer: {
     marginBottom: 24,
     alignItems: 'center',
@@ -94,12 +127,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: 'serif',
     color: '#2a3d66',
-    marginTop: 65,
-    marginBottom: 24,
-    textAlign: 'center',
+    textAlign: 'center', // Centra el texto
     textShadowColor: '#b0c4de',
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 4,
     letterSpacing: 1,
+    flex: 1,
   },
 });
