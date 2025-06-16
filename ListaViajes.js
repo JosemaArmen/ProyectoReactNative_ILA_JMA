@@ -5,8 +5,15 @@ import { getDatabase, ref, onValue, remove } from 'firebase/database';
 import { db } from './firebaseConfig';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage';
+import { connect } from 'react-redux';
 
-export default function ListaViajes({ navigation }) {
+const mapStateToProps = state => {
+  return {
+    user: state.user
+  };
+}
+
+function ListaViajes({ navigation, user }) {
   const [viajes, setViajes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -18,16 +25,18 @@ export default function ListaViajes({ navigation }) {
     const unsubscribe = onValue(viajesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const lista = Object.entries(data).map(([id, item]) => ({
+        console.log('Usuario: ', user.user.uid);
+        const lista = Object.entries(data).filter(([id, item]) => item.uid === user.user.uid).map(([id, item]) => ({
+        // const lista = Object.entries(data).map(([id, item]) => ({
           id,
           nombre: item.nombre || '',
           ubicacion: item.ubicacion || '',
           foto:
             item.fotos &&
-            Array.isArray(item.fotos) &&
-            item.fotos.length > 0 &&
-            item.fotos[0] &&
-            item.fotos[0].url
+              Array.isArray(item.fotos) &&
+              item.fotos.length > 0 &&
+              item.fotos[0] &&
+              item.fotos[0].url
               ? item.fotos[0].url
               : null,
         }));
@@ -60,7 +69,7 @@ export default function ListaViajes({ navigation }) {
           const storagePath = getStoragePathFromUrl(foto.url);
           if (storagePath) {
             const imgRef = storageRef(storage, storagePath);
-            return deleteObject(imgRef).catch(() => {});
+            return deleteObject(imgRef).catch(() => { });
           }
         }
         return Promise.resolve();
@@ -149,7 +158,7 @@ function getStoragePathFromUrl(url) {
     if (match && match[1]) {
       return decodeURIComponent(match[1]);
     }
-  } catch (e) {}
+  } catch (e) { }
   return null;
 }
 
@@ -225,3 +234,5 @@ const styles = StyleSheet.create({
     gap: 16,
   },
 });
+
+export default connect(mapStateToProps)(ListaViajes);

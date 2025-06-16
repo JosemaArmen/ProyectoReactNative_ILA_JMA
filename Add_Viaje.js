@@ -5,10 +5,17 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObjec
 import { db } from './firebaseConfig';
 import { launchImageLibrary } from 'react-native-image-picker';
 import DateTimePickerModal from "react-native-modal-datetime-picker"; // <-- IMPORTANTE
+import { connect } from 'react-redux';
+
+const mapStateToProps = state => {
+  return {
+    user: state.user
+  };
+}
 
 const storage = getStorage();
 
-export default function Add_Viaje() {
+function Add_Viaje({ user }) {
   const [viajeActualExiste, setViajeActualExiste] = useState(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [titulo, setTitulo] = useState('');
@@ -120,6 +127,7 @@ export default function Add_Viaje() {
         fecha: fechas,
         // tiempo: tiempo, // Eliminar este campo
         imagen: imagen || null,
+        uid: user.user.uid
       });
       setViajeActualExiste(true);
     }
@@ -1099,3 +1107,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+export default connect(mapStateToProps)(Add_Viaje);
