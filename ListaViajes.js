@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { getDatabase, ref, onValue } from 'firebase/database';
+import { View, Text, Image, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Modal, Button } from 'react-native';
+import { getDatabase, ref, onValue, remove } from 'firebase/database';
 // import app from './firebaseConfig';
 import { db } from './firebaseConfig';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -8,6 +8,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 export default function ListaViajes({ navigation }) {
   const [viajes, setViajes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [viajeSeleccionado, setViajeSeleccionado] = useState(null);
 
   useEffect(() => {
     // const db = getDatabase(app);
@@ -37,6 +39,25 @@ export default function ListaViajes({ navigation }) {
     return () => unsubscribe();
   }, []);
 
+  const handleLongPress = (viaje) => {
+    setViajeSeleccionado(viaje);
+    setModalVisible(true);
+  };
+
+  const eliminarViaje = () => {
+    const db = getDatabase();
+    remove(ref(db, `viajes/${viajeSeleccionado.id}`))
+      .then(() => {
+        setModalVisible(false);
+        setViajeSeleccionado(null);
+        // Aquí puedes actualizar la lista de viajes si lo necesitas
+      })
+      .catch(() => {
+        setModalVisible(false);
+        setViajeSeleccionado(null);
+      });
+  };
+
   if (loading) {
     return <ActivityIndicator size="large" style={{ marginTop: 40 }} />;
   }
@@ -61,6 +82,7 @@ export default function ListaViajes({ navigation }) {
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() => navigation.navigate('Viaje', { viajeId: item.id })}
+            onLongPress={() => handleLongPress(item)}
           >
             <View style={styles.itemContainer}>
               {item.foto ? (
@@ -76,6 +98,23 @@ export default function ListaViajes({ navigation }) {
         )}
         contentContainerStyle={{ padding: 16, paddingTop: 0 }}
       />
+
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <Text>¿Seguro que quieres eliminar este viaje?</Text>
+            <View style={styles.buttonRow}>
+              <Button title="Cancelar" onPress={() => setModalVisible(false)} />
+              <Button title="Eliminar" color="red" onPress={eliminarViaje} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -133,5 +172,22 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
     letterSpacing: 1,
     flex: 1,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    marginTop: 16,
+    gap: 16,
   },
 });
