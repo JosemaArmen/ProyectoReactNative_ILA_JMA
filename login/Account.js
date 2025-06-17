@@ -4,8 +4,8 @@ import { connect } from 'react-redux';
 import { addUser, setLoggedIn } from '../redux/ActionCreators';
 
 const mapDispatchToProps = dispatch => ({
-  addUser: (user) => dispatch(addUser(user)),
-  setLoggedIn: (loggedIn) => dispatch(setLoggedIn(loggedIn))
+    addUser: (user) => dispatch(addUser(user)),
+    setLoggedIn: (loggedIn) => dispatch(setLoggedIn(loggedIn))
 });
 
 function Account({ navigation, addUser, setLoggedIn }) {

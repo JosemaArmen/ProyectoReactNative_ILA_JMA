@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ListaViajes from './ListaViajes';
@@ -17,11 +17,13 @@ import Login from './login/Login';
 import Viaje from './Viaje';
 import Account from './login/Account';
 import { addUser, setLoggedIn } from './redux/ActionCreators';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebaseConfig';
 
 const mapStateToProps = state => {
   return {
-    loggedIn: state.loggedIn,
-    user: state.user
+    loggedIn: state.loggedIn
   };
 }
 
@@ -55,17 +57,17 @@ function PagPrincipal({ navigation }) {
         }}
       />
       <Tab.Screen
-              name="Añadir viaje"
-              component={Add_Viaje}
-              options={{
-                tabBarIcon: ({ color, size }) => (
-                  <Image
-                    source={{ uri: 'https://cdn-icons-png.flaticon.com/512/992/992651.png' }} // Icono de +
-                    style={{ width: size, height: size, tintColor: color }}
-                  />
-                ),
-              }}
+        name="Añadir viaje"
+        component={Add_Viaje}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Image
+              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/992/992651.png' }} // Icono de +
+              style={{ width: size, height: size, tintColor: color }}
             />
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -108,26 +110,42 @@ const Stack = createNativeStackNavigator();
 
 function Home({ navigation, loggedIn, user, addUser, setLoggedIn }) {
 
-  let control_sesion;
+  // let control_sesion;
 
-  if (loggedIn.loggedIn) {
-    if (user.user.expirationTime > Date.now()) {
-      control_sesion = true;
-      console.log("Session is active, user:", user.user.uid);
-    } else {
-      control_sesion = false;
-      console.log("Session expired, logging out");
-      addUser(null);
-      setLoggedIn(false);
-    }
-  } else {
-    control_sesion = false;
-    console.log("User not logged in");
-  }
+  // if (loggedIn.loggedIn) {
+  //   if (user.user.expirationTime > Date.now()) {
+  //     control_sesion = true;
+  //     console.log("Session is active, user:", user.user.uid);
+  //   } else {
+  //     control_sesion = false;
+  //     console.log("Session expired, logging out");
+  //     addUser(null);
+  //     setLoggedIn(false);
+  //   }
+  // } else {
+  //   control_sesion = false;
+  //   console.log("User not logged in");
+  // }
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const session = { uid: user.uid, expirationTime: user.stsTokenManager.expirationTime };
+        setLoggedIn(true);
+        addUser(session);
+        console.log("User logged in: ", session.uid);
+      } else {
+        setLoggedIn(false);
+        addUser(null);
+        console.log("User not logged in");
+      }
+    });
+    return () => unsub();
+  }, []);
 
   return (
     <NavigationContainer>
-      {control_sesion ? (
+      {loggedIn.loggedIn ? (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Home" component={PagPrincipal} />
           <Stack.Screen name="Viaje" component={Viaje} />

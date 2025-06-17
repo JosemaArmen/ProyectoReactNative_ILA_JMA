@@ -6,6 +6,7 @@ import { db } from './firebaseConfig';
 import { launchImageLibrary } from 'react-native-image-picker';
 import DateTimePickerModal from "react-native-modal-datetime-picker"; // <-- IMPORTANTE
 import { connect } from 'react-redux';
+import { storage } from './firebaseConfig';
 
 const mapStateToProps = state => {
   return {
@@ -13,7 +14,7 @@ const mapStateToProps = state => {
   };
 }
 
-const storage = getStorage();
+// const storage = getStorage();
 
 function Add_Viaje({ user }) {
   const [viajeActualExiste, setViajeActualExiste] = useState(null);
@@ -74,7 +75,7 @@ function Add_Viaje({ user }) {
 
   // Cargar fotos al iniciar o cuando se añade una nueva
   const cargarFotos = async () => {
-    const fotosRef = ref(db, 'viaje_actual/fotos');
+    const fotosRef = ref(db, 'viaje_actual_' + user.user.uid + '/fotos');
     const snapshot = await get(fotosRef);
     if (snapshot.exists()) {
       const data = snapshot.val();
@@ -93,7 +94,7 @@ function Add_Viaje({ user }) {
   useEffect(() => {
     const checkViajeActual = async () => {
       try {
-        const viajeRef = ref(db, 'viaje_actual');
+        const viajeRef = ref(db, 'viaje_actual_' + user.user.uid);
         const snapshot = await get(viajeRef);
         if (snapshot.exists()) {
           const data = snapshot.val();
@@ -122,7 +123,7 @@ function Add_Viaje({ user }) {
 
   useEffect(() => {
     if (mostrarFormulario && (titulo || fechas || imagen)) {
-      set(ref(db, 'viaje_actual'), {
+      set(ref(db, 'viaje_actual_' + user.user.uid), {
         nombre: titulo,
         fecha: fechas,
         // tiempo: tiempo, // Eliminar este campo
@@ -213,12 +214,15 @@ function Add_Viaje({ user }) {
       const referencia = storageRef(storage, nombreArchivo);
       const response = await fetch(uri);
       const blob = await response.blob();
+      console.log('Llego 1');
       await uploadBytes(referencia, blob);
+      console.log('Llego 2');
       const url = await getDownloadURL(referencia);
 
       // Obtener coordenadas de la ubicación seleccionada
       const placeId = ubicacionSeleccionada.place_id;
       let lat = null, lng = null;
+      console.log('Llego 3');
       if (placeId) {
         const geoRes = await fetch(
           `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry&key=AIzaSyDH0v9dvfBAdnQ657z_3g6_ZtD1_sOxTOc`
@@ -229,15 +233,18 @@ function Add_Viaje({ user }) {
           lng = geoData.result.geometry.location.lng;
         }
       }
+      console.log('Llego 4');
 
       // Obtener clima actual de esa ubicación
       let climaFoto = null;
       if (lat && lng) {
         climaFoto = await obtenerClimaPorCoordenadas(lat, lng);
       }
+      console.log('Llego 5');
 
-      const fotosRef = ref(db, 'viaje_actual/fotos');
+      const fotosRef = ref(db, 'viaje_actual_' + user.user.uid + '/fotos');
       const snapshot = await get(fotosRef);
+      console.log('Llego 6');
       let fotosArray = [];
       if (snapshot.exists()) {
         const data = snapshot.val();
@@ -254,8 +261,9 @@ function Add_Viaje({ user }) {
         ubicacion: ubicacionSeleccionada.description,
         // NO guardar clima aquí
       });
+      console.log('Llego 7');
       await set(fotosRef, fotosArray);
-
+      console.log('Llego 8');
       // Si es la primera foto, guarda el campo "tiempo" en viaje_actual
       if (fotosArray.length === 1 && climaFoto) {
         let tiempoTexto = '';
@@ -268,29 +276,33 @@ function Add_Viaje({ user }) {
         } else {
           tiempoTexto = 'Sin datos';
         }
-        const viajeActualRef = ref(db, 'viaje_actual');
+        console.log('Llego 9');
+        const viajeActualRef = ref(db, 'viaje_actual_' + user.user.uid);
         await set(viajeActualRef, {
           ...(await (await get(viajeActualRef)).val()),
           tiempo: tiempoTexto,
         });
       }
+      console.log('Llego 10');
 
       setImagenSeleccionada(null);
       setUbicacionSeleccionada(null);
       setUbicacionModalVisible(false);
       await cargarFotos();
       Alert.alert('Foto añadida correctamente');
+      console.log('Llego 11');
     } catch (e) {
       console.log('Error al subir la foto:', e);
       Alert.alert('Error al subir la foto', e.message || '');
     }
+    console.log('Llego 12');
     setSubiendo(false);
   };
 
   // Guardar la nueva ubicación de una foto ya existente
   const guardarNuevaUbicacionFoto = async () => {
     if (!fotoEditandoUbicacion || !ubicacionSeleccionada) return;
-    const fotosRef = ref(db, 'viaje_actual/fotos');
+    const fotosRef = ref(db, 'viaje_actual_' + user.user.uid + '/fotos');
     const snapshot = await get(fotosRef);
     let fotosArray = [];
     if (snapshot.exists()) {
@@ -339,7 +351,7 @@ function Add_Viaje({ user }) {
   // Función para finalizar el viaje
   const finalizarViaje = async () => {
     try {
-      const viajeRef = ref(db, 'viaje_actual');
+      const viajeRef = ref(db, 'viaje_actual_' + user.user.uid);
       const snapshot = await get(viajeRef);
       if (snapshot.exists()) {
         const viajeData = snapshot.val();
@@ -378,7 +390,7 @@ function Add_Viaje({ user }) {
   // Función para cancelar el viaje actual
   const cancelarViaje = async () => {
     try {
-      await remove(ref(db, 'viaje_actual'));
+      await remove(ref(db, 'viaje_actual_' + user.user.uid));
       setViajeActualExiste(false);
       setMostrarFormulario(false);
       Alert.alert('Viaje cancelado', 'El viaje actual ha sido eliminado.');
@@ -699,7 +711,7 @@ function Add_Viaje({ user }) {
                       const refStorage = storageRef(storage, nombreArchivo);
                       await deleteObject(refStorage);
 
-                      const fotosRef = ref(db, 'viaje_actual/fotos');
+                      const fotosRef = ref(db, 'viaje_actual_' + user.user.uid + '/fotos');
                       const snapshot = await get(fotosRef);
                       let fotosArray = [];
                       if (snapshot.exists()) {
