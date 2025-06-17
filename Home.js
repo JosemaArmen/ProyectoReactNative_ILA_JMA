@@ -75,15 +75,7 @@ function PagPrincipal({ navigation }) {
 function TripListScreen({ navigation }) {
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.accountButton}
-        onPress={() => navigation.navigate('Account')}
-      >
-        <Image
-          source={{ uri: 'https://cdn-icons-png.flaticon.com/512/747/747376.png' }} // Icono de usuario
-          style={styles.accountIcon}
-        />
-      </TouchableOpacity>
+     
       <ListaViajes navigation={navigation} />
     </View>
   );
