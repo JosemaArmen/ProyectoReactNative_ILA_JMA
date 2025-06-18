@@ -1,4 +1,4 @@
-import { Button, View } from 'react-native';
+import { View, TouchableOpacity, Text } from 'react-native';
 import { auth } from '../firebaseConfig'
 import { connect } from 'react-redux';
 import { addUser, setLoggedIn } from '../redux/ActionCreators';
@@ -20,17 +20,17 @@ function Account({ navigation, addUser, setLoggedIn }) {
             });
         addUser(null);
         setLoggedIn(false);
-        // cerrarSesion();
-        // navigation.navigate('Home'); // Redirigir a la pantalla de inicio de sesión
     }
 
     return (
         <View style={styles.container}>
-            <Button
-                title="Cerrar sesión"
+            <TouchableOpacity
+                style={styles.button}
+                activeOpacity={0.85}
                 onPress={handleLogout}
             >
-            </Button>
+                <Text style={styles.buttonText}>CERRAR SESIÓN</Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -43,13 +43,24 @@ const styles = {
         backgroundColor: '#f0f0f0',
     },
     button: {
-        padding: 10,
-        backgroundColor: '#007bff',
-        borderRadius: 5,
+        backgroundColor: '#1976d2',
+        borderRadius: 25,
+        paddingVertical: 16,
+        paddingHorizontal: 48,
+        alignItems: 'center',
+        width: 260,
+        marginTop: 8,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
     },
     buttonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 18,
+        fontWeight: 'bold',
+        letterSpacing: 1,
     },
 };
 
