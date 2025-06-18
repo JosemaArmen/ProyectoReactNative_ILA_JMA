@@ -214,15 +214,12 @@ function Add_Viaje({ user }) {
       const referencia = storageRef(storage, nombreArchivo);
       const response = await fetch(uri);
       const blob = await response.blob();
-      console.log('Llego 1');
       await uploadBytes(referencia, blob);
-      console.log('Llego 2');
       const url = await getDownloadURL(referencia);
 
       // Obtener coordenadas de la ubicación seleccionada
       const placeId = ubicacionSeleccionada.place_id;
       let lat = null, lng = null;
-      console.log('Llego 3');
       if (placeId) {
         const geoRes = await fetch(
           `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry&key=AIzaSyDH0v9dvfBAdnQ657z_3g6_ZtD1_sOxTOc`
@@ -233,18 +230,15 @@ function Add_Viaje({ user }) {
           lng = geoData.result.geometry.location.lng;
         }
       }
-      console.log('Llego 4');
 
       // Obtener clima actual de esa ubicación
       let climaFoto = null;
       if (lat && lng) {
         climaFoto = await obtenerClimaPorCoordenadas(lat, lng);
       }
-      console.log('Llego 5');
 
       const fotosRef = ref(db, 'viaje_actual_' + user.user.uid + '/fotos');
       const snapshot = await get(fotosRef);
-      console.log('Llego 6');
       let fotosArray = [];
       if (snapshot.exists()) {
         const data = snapshot.val();
@@ -261,9 +255,7 @@ function Add_Viaje({ user }) {
         ubicacion: ubicacionSeleccionada.description,
         // NO guardar clima aquí
       });
-      console.log('Llego 7');
       await set(fotosRef, fotosArray);
-      console.log('Llego 8');
       // Si es la primera foto, guarda el campo "tiempo" en viaje_actual
       if (fotosArray.length === 1 && climaFoto) {
         let tiempoTexto = '';
@@ -276,26 +268,22 @@ function Add_Viaje({ user }) {
         } else {
           tiempoTexto = 'Sin datos';
         }
-        console.log('Llego 9');
         const viajeActualRef = ref(db, 'viaje_actual_' + user.user.uid);
         await set(viajeActualRef, {
           ...(await (await get(viajeActualRef)).val()),
           tiempo: tiempoTexto,
         });
       }
-      console.log('Llego 10');
 
       setImagenSeleccionada(null);
       setUbicacionSeleccionada(null);
       setUbicacionModalVisible(false);
       await cargarFotos();
       Alert.alert('Foto añadida correctamente');
-      console.log('Llego 11');
     } catch (e) {
       console.log('Error al subir la foto:', e);
       Alert.alert('Error al subir la foto', e.message || '');
     }
-    console.log('Llego 12');
     setSubiendo(false);
   };
 
