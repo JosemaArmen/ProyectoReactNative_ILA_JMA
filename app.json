@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ProyectoReactNative_ILA_JMA",
-    "slug": "ProyectoReactNative_ILA_JMA",
+    "name": "pruebaloginv2",
+    "slug": "pruebaloginv2",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -21,7 +21,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.josemaarmen.ProyectoReactNative_ILA_JMA"
+      "package": "com.josemaarmen.pruebaloginv2"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,8 +31,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "9afc58c0-483a-4a53-ae43-b195054ddf12"
+        "projectId": "8301d70b-270f-4c39-a6d3-ee28e66254d4"
       }
-    }
+    },
+    "scheme": "https://pruebaloginv2.firebaseapp.com/__/auth/handler"
   }
 }

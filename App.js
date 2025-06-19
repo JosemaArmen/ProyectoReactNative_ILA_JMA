@@ -20,7 +20,8 @@ export default function App() {
   const [loading, setLoading] = React.useState(false);
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     iosClientId: "",
-    androidClientId: "",
+    androidClientId: "854904043029-gtbpn979i9r60bhgcs4arp959410dbe7.apps.googleusercontent.com"
+    // expoClientId: "",
   });
 
   const getLocalUser = async () => {
@@ -37,6 +38,7 @@ export default function App() {
   };
 
   React.useEffect(() => {
+    console.log("Google Auth response:", response);
     if (response?.type === "success") {
       const { id_token } = response.params;
       const credential = GoogleAuthProvider.credential(id_token);
